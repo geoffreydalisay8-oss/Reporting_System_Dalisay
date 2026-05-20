@@ -12,7 +12,7 @@
             <div class="position-relative">
                 <div style="position: absolute; left: 19px; top: 0; bottom: 0; width: 2px; background: #e9ecef;"></div>
 
-                @foreach($activities as $activity)
+                @forelse($activities as $activity)
                     <div class="d-flex mb-4 position-relative" style="z-index: 2;">
                         @php
                             $color = '#4a90e2';
@@ -43,11 +43,16 @@
                             </div>
                         </div>
                     </div>
-                @endforeach
+                @empty
+                    <div class="text-center py-5">
+                        <h5 class="text-muted">No activity yet</h5>
+                        <p class="text-secondary">Your activity log will appear here once you are assigned to tickets and perform updates.</p>
+                    </div>
+                @endforelse
             </div>
 
             <div class="mt-4">
-                {{ $activities->links() }}
+                {{ $activities->links('pagination::simple-tailwind') }}
             </div>
         </div>
     </div>

@@ -56,7 +56,7 @@ Route::middleware(['auth', 'role:admin,staff'])->prefix('admin')->group(function
         Route::get('/staff', [AdminDashboardController::class, 'manageStaff'])->name('admin.staff.index');
         Route::get('/staff/create', [AdminDashboardController::class, 'createStaff'])->name('admin.staff.create');
         Route::post('/staff/store', [AdminDashboardController::class, 'storeStaff'])->name('admin.staff.store');
-        Route::get('/staff/{id}/edit', [AdminDashboardController::class, 'editStaff'])->name('admin.staff.edit');
+        Route::get('/admin/staff/{id}/edit', [AdminDashboardController::class, 'editStaff'])->name('admin.staff.edit');
         Route::put('/staff/{id}', [AdminDashboardController::class, 'updateStaff'])->name('admin.staff.update');
         Route::delete('/staff/{id}', [AdminDashboardController::class, 'destroyStaff'])->name('admin.staff.destroy');
         Route::get('/admin/tickets/{id}', [AdminDashboardController::class, 'showTicket'])->name('admin.tickets.show');

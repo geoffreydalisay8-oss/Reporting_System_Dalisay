@@ -188,7 +188,15 @@ class AdminDashboardController extends Controller
     return back()->with('success', 'Status updated and logged!');
 }
 
+public function editStaff($id)
+{
+    if (Auth::user()->role !== 'admin') {
+        abort(403, 'Unauthorized action.');
+    }
 
+    $staff = User::findOrFail($id);
+    return view('admin.edit-staff', compact('staff'));
+}
     public function createStaff()
     {
         // Security check: Only Admins can create staff
@@ -229,20 +237,31 @@ class AdminDashboardController extends Controller
     }
 
     public function updateStaff(Request $request, $id)
-    {
-        if (Auth::user()->role !== 'admin') { abort(403); }
+{
+    if (Auth::user()->role !== 'admin') { abort(403); }
 
-        $staff = User::findOrFail($id);
-        $request->validate([
-            'name'  => 'required|string|max:255|unique:users,name,' . $id,
-            'email' => 'required|email|unique:users,email,' . $id,
-            'type' => 'required|string',
-        ]);
+    $staff = User::findOrFail($id);
+    
+    $request->validate([
+        'name'  => 'required|string|max:255|unique:users,name,' . $id,
+        'email' => 'required|email|unique:users,email,' . $id,
+        'type'  => 'required|string',
+        'password' => 'nullable|min:8', // Allow password to be empty (not changed)
+    ]);
 
-        $staff->update($request->only('name', 'email', 'type'));
+    // Prepare data to update
+    $data = $request->only('name', 'email', 'type');
 
-        return redirect()->route('admin.staff.index')->with('success', 'Staff updated successfully!');
+    // Only update password if a new one was provided
+    if ($request->filled('password')) {
+        $data['password'] = Hash::make($request->password);
     }
+
+    $staff->update($data);
+
+    return redirect()->route('admin.staff.index')->with('success', 'Staff updated successfully!');
+}
+
 
     public function destroyStaff($id)
     {
@@ -252,11 +271,20 @@ class AdminDashboardController extends Controller
     }
 
 
-    public function activityLog()
+  public function activityLog()
 {
-    $activities = TicketHistory::with(['user', 'ticket'])
-        ->latest()
-        ->paginate(15); // Shows 15 items per page
+    $user = auth()->user();
+
+    // 1. Initialize Query
+    $query = TicketHistory::with(['user', 'ticket']);
+
+    // 2. Strict Filter: If not admin, only show activities performed by this specific staff member
+    if ($user->role !== 'admin') {
+        $query->where('user_id', $user->id);
+    }
+
+    // 3. Get results
+    $activities = $query->latest()->paginate(15);
 
     return view('admin.activity-log', compact('activities'));
 }

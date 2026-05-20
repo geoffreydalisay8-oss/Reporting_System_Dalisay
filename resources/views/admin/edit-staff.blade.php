@@ -60,16 +60,13 @@
                 @endif
 
                 <div class="form-group">
-                    <label>Department</label>
-                    <select name="department" class="form-input" required>
-                        <option value="">-- Select Department --</option>
-                        @php $depts = ['Maintenance', 'ICT Services', 'Security', 'Administrative', 'Clinic']; @endphp
-                        @foreach($depts as $dept)
-                            <option value="{{ $dept }}" {{ (isset($staff) && $staff->department == $dept) ? 'selected' : '' }}>
-                                {{ $dept }}
-                            </option>
-                        @endforeach
+                    <label>Type</label>
+                    <select name="type" class="form-input" required>
+                        <option value="">-- Select Type --</option>
+                        <option value="Complaint" {{ (isset($staff) && $staff->type == 'Complaint') ? 'selected' : '' }}>Complaint</option>
+                        <option value="Incident" {{ (isset($staff) && $staff->type == 'Incident') ? 'selected' : '' }}>Incident</option>
                     </select>
+                </div>
                 </div>
 
                 <button type="submit" class="btn-submit">
