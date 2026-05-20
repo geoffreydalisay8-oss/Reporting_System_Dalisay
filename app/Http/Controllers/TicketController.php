@@ -165,24 +165,42 @@ public function dashboard()
 public function cancel($id)
 {
     $ticket = Ticket::findOrFail($id);
+    $oldStatus = $ticket->status;
 
-    // 1. Security: Only the owner can cancel
+    // 1. Security Check
     if ($ticket->user_id !== auth()->id()) {
         abort(403);
     }
 
-    // 2. NEW LOGIC: Block cancellation if it's In Progress or already finished
+    // 2. Logic: Block cancellation if it's already in progress or completed
     if (in_array($ticket->status, ['In Progress', 'Resolved', 'Cancelled'])) {
         return back()->with('error', 'You cannot cancel a ticket that is already in progress or completed.');
     }
 
-    // 3. Perform the update
-    // THE TRIGGER FIRES AUTOMATICALLY AFTER THIS LINE
-    $ticket->update(['status' => 'Cancelled']);
+    // 3. Manual Logging: Replace the trigger with a database transaction
+    DB::beginTransaction();
+    try {
+        // Update the ticket
+        $ticket->update(['status' => 'Cancelled']);
 
-    return back()->with('success', 'Ticket successfully cancelled.');
-}
+        // Manually create the history record (replacing the database trigger)
+        TicketHistory::create([
+            'ticket_id'   => $ticket->id,
+            'user_id'     => auth()->id(),
+            'status_from' => $oldStatus,
+            'status_to'   => 'Cancelled',
+            'comment'     => 'System: Ticket marked as Cancelled by user',
+            'created_at'  => now(),
+        ]);
 
+        DB::commit();
+        return back()->with('success', 'Ticket successfully cancelled.');
+        
+    } catch (\Exception $e) {
+        DB::rollback();
+        return back()->with('error', 'Failed to cancel the ticket. Please try again.');
+    }
+    }
 public function markAsReadAndRedirect($id)
 {
     $notification = auth()->user()->notifications()->findOrFail($id);
