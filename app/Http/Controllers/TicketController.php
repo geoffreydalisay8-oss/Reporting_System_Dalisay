@@ -115,19 +115,21 @@ if ($request->hasFile('attachment')) {
 public function dashboard()
 {
     $userId = Auth::id();
-    
-    // Call Procedure 1: Stats
-    $dbStats = DB::select('CALL GetUserStats(?)', [$userId])[0];
-    
-    // We format it as an array so your existing Blade view doesn't break
+
+    // 1. Manually calculate stats using Eloquent
+    // This replaces your 'CALL GetUserStats(?)' procedure
     $stats = [
-        'total'    => $dbStats->total,
-        'pending'  => $dbStats->pending,
-        'resolved' => $dbStats->resolved,
+        'total'    => Ticket::where('user_id', $userId)->count(),
+        'pending'  => Ticket::where('user_id', $userId)->where('status', 'Pending')->count(),
+        'resolved' => Ticket::where('user_id', $userId)->where('status', 'Resolved')->count(),
     ];
 
-    // Call Procedure 2: Recent Tickets
-    $recentTickets = DB::select('CALL GetUserRecentTickets(?)', [$userId]);
+    // 2. Manually fetch recent tickets using Eloquent
+    // This replaces your 'CALL GetUserRecentTickets(?)' procedure
+    $recentTickets = Ticket::where('user_id', $userId)
+                           ->latest()
+                           ->take(5)
+                           ->get();
 
     return view('tickets.dashboard', compact('stats', 'recentTickets'));
 }

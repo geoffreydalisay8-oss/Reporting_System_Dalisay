@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin Dashboard</title>
+    <title>{{ auth()->user()->role == 'admin' ? 'Admin Dashboard' : 'Staff Dashboard' }}</title>
     
     <!-- Bootstrap 5 for modern UI components -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
@@ -31,35 +31,44 @@
     </style>
 </head>
 <body>
-
-<div class="sidebar">
-    <h2>Reporting System</h2>
+<div class="sidebar"> 
     
-    <!-- Both Admin and Staff see the Dashboard -->
-    <a href="{{ route('admin.dashboard') }}" class="{{ request()->routeIs('admin.dashboard') ? 'active' : '' }}">Dashboard</a>
+    <div class="sidebar-brand">
+        @if(auth()->user()->role == 'admin')
+            Admin Dashboard
+        @else
+            Staff Portal
+        @endif
+    </div>
+    
+    <a href="{{ route('admin.dashboard') }}" class="{{ request()->routeIs('admin.dashboard') ? 'active' : '' }}">
+        <i class="fas fa-home"></i> Dashboard
+    </a>
 
-    <!-- ONLY Admin can see Manage Staff -->
     @if(Auth::user()->role === 'admin')
-        <a href="{{ route('admin.staff.index') }}" class="{{ request()->routeIs('admin.staff.index') ? 'active' : '' }}">Manage Staff</a>
+        <a href="{{ route('admin.staff.index') }}" class="{{ request()->routeIs('admin.staff.index') ? 'active' : '' }}">
+            <i class="fas fa-users"></i> Manage Staff
+        </a>
     @endif
 
-    <!-- Both see Tickets (But the Controller will filter the list) -->
-    <a href="{{ route('admin.ticket.index') }}">
-    {{ Auth::user()->role === 'admin' ? 'All Tickets' : 'My Assigned Tickets' }}
-</a>    
+    <a href="{{ route('admin.ticket.index') }}" class="{{ request()->routeIs('admin.ticket.index') ? 'active' : '' }}">
+        <i class="fas fa-ticket-alt"></i> 
+        {{ Auth::user()->role === 'admin' ? 'All Tickets' : 'My Assigned Tickets' }}
+    </a>    
     
-<a href="{{ route('admin.activity.log') }}" class="{{ request()->routeIs('admin.activity.log') ? 'active' : '' }}">
-    Activity Log
-</a>
+    <a href="{{ route('admin.activity.log') }}" class="{{ request()->routeIs('admin.activity.log') ? 'active' : '' }}">
+        <i class="fas fa-history"></i> Activity Log
+    </a>
 
-
-    <form action="{{ route('logout') }}" method="POST" style="margin-top: 20px;">
+    <form action="{{ route('logout') }}" method="POST">
         @csrf
-        <button type="submit" style="background:none; border:none; color:#e74c3c; cursor:pointer; padding: 12px 15px; text-align: left; width: 100%; font-size: 1rem;">Logout</button>
+        <button type="submit" class="btn btn-link" style="color: #e74c3c; text-decoration: none; padding: 12px 15px; width: 100%; text-align: left;">
+            <i class="fas fa-sign-out-alt"></i> Logout
+        </button>
     </form>
 </div>
 
-<div class="main-content">
+    <div class="main-content">
     @yield('content')
 </div>
 
