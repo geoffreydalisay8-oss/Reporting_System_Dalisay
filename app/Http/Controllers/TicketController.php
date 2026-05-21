@@ -16,6 +16,7 @@ public function index(Request $request)
     $user = auth()->user();
     $search = $request->input('search');
     $category = $request->input('category');
+    $status   = $request->input('status');
 
     // 1. Start the query (Do NOT use ->get() yet)
     $query = Ticket::where('user_id', $user->id)
@@ -33,6 +34,10 @@ public function index(Request $request)
     // 3. Add Category Filter if provided
     if ($category && $category !== 'all') {
         $query->where('department_id', $category); // ← fixed typo was 'departmnet'
+    }
+
+    if ($status && $status !== 'all') {
+        $query->where('status', $status);
     }
 
     // 4. Finalize: Sort and then Fetch the data
@@ -89,7 +94,7 @@ public function store(Request $request)
     }
 }
 
-    // View specific ticket details 
+    
     public function show($id)
 {
     // 1. Fetch the ticket with its relationships
@@ -115,7 +120,7 @@ public function dashboard()
 {
     $userId = Auth::id();
 
-    // 1. Manually calculate stats using Eloquent
+   
      $statsResult = DB::select('CALL GetUserStats(?)', [$userId]);
      $stats = [
         'total'      => $statsResult[0]->total,
@@ -126,14 +131,13 @@ public function dashboard()
     ];
 
 
-    // 2. Manually fetch recent tickets using Eloquent
-    // This replaces your 'CALL GetUserRecentTickets(?)' procedure
+    
     $recentTickets = DB::select('CALL GetUserRecentTickets(?, ?)', [$userId, 5]);
 
     return view('tickets.dashboard', compact('stats', 'recentTickets'));
 }
 
-    // Add a comment to the discussion thread
+    
  public function storeComment(Request $request, Ticket $ticket)
 {
     $request->validate(['body' => 'required|string']);

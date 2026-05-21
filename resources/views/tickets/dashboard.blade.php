@@ -1,94 +1,237 @@
-    @extends('layouts.employee')
+@extends('layouts.employee')
 
-    @section('content')
-    <div style="max-width: 1400px; margin: 0 auto; padding: 20px;">
-        
-        <!-- Header Section -->
-        <div style="margin-bottom: 40px;">
-            Good day, {{ auth()->user()->name }}
-            <h1 style="color: #0f172a; margin: 0; font-size: 2.5rem; font-weight: 800; letter-spacing: -0.025em;">Dashboard Overview</h1>
-            <p style="color: #64748b; margin-top: 8px; font-size: 1.1rem;">Welcome back! Here is a summary of your ticket activity.</p>
-        </div>
+@section('content')
 
-        <!-- 1. Stats Grid (Enhanced Large Cards) -->
-        <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 24px; margin-bottom: 50px;">
-            
-            @php
-                $stats = [
-                    ['label' => 'Total Tickets', 'count' => \App\Models\Ticket::where('user_id', auth()->id())->count(), 'icon' => '🎫', 'bg' => '#eff6ff', 'color' => '#3b82f6'],
-                    ['label' => 'Pending', 'count' => \App\Models\Ticket::where('user_id', auth()->id())->where('status', 'Pending')->count(), 'icon' => '🕒', 'bg' => '#fffbeb', 'color' => '#f59e0b'],
-                    ['label' => 'In Progress', 'count' => \App\Models\Ticket::where('user_id', auth()->id())->where('status', 'In Progress')->count(), 'icon' => '❗', 'bg' => '#fff7ed', 'color' => '#f97316'],
-                    ['label' => 'Resolved', 'count' => \App\Models\Ticket::where('user_id', auth()->id())->where('status', 'Resolved')->count(), 'icon' => '✅', 'bg' => '#f0fdf4', 'color' => '#22c55e'],
-                ];
-            @endphp
+@php
+    $userId = auth()->id();
+    $total       = \App\Models\Ticket::where('user_id', $userId)->count();
+    $pending     = \App\Models\Ticket::where('user_id', $userId)->where('status', 'Pending')->count();
+    $inProgress  = \App\Models\Ticket::where('user_id', $userId)->where('status', 'In Progress')->count();
+    $resolved    = \App\Models\Ticket::where('user_id', $userId)->where('status', 'Resolved')->count();
+    $resolutionRate = $total > 0 ? round(($resolved / $total) * 100) : 0;
+    $recentTickets = \App\Models\Ticket::where('user_id', $userId)->with('department')->latest()->take(5)->get();
+@endphp
 
-            @foreach($stats as $stat)
-            <div class="content-card" style="display: flex; justify-content: space-between; align-items: center; padding: 30px; background: white; border-radius: 16px; border: 1px solid #f1f5f9; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);">
-                <div>
-                    <p style="color: #64748b; font-size: 1rem; font-weight: 600; margin: 0; text-transform: uppercase; letter-spacing: 0.05em;">{{ $stat['label'] }}</p>
-                    <h2 style="font-size: 2.5rem; margin: 10px 0 0 0; color: #0f172a; font-weight: 800;">{{ $stat['count'] }}</h2>
-                </div>
-                <div style="background: {{ $stat['bg'] }}; width: 60px; height: 60px; display: flex; align-items: center; justify-content: center; border-radius: 12px; font-size: 1.8rem;">
-                    {{ $stat['icon'] }}
-                </div>
-            </div>
-            @endforeach
-        </div>
+<style>
+    .stat-card {
+        background: white;
+        border-radius: 16px;
+        border: 1px solid var(--border);
+        box-shadow: var(--card-shadow);
+        padding: 24px;
+        display: flex;
+        align-items: center;
+        gap: 18px;
+        transition: transform 0.2s, box-shadow 0.2s;
+    }
+    .stat-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 8px 24px rgba(0,0,0,0.1);
+    }
+    .stat-icon {
+        width: 54px; height: 54px;
+        border-radius: 14px;
+        display: flex; align-items: center; justify-content: center;
+        font-size: 1.4rem;
+        flex-shrink: 0;
+    }
+    .stat-label {
+        font-size: 0.75rem;
+        font-weight: 700;
+        color: var(--text-muted);
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        margin-bottom: 4px;
+    }
+    .stat-value {
+        font-size: 2rem;
+        font-weight: 800;
+        color: var(--text);
+        line-height: 1;
+    }
+    .stat-sub {
+        font-size: 0.72rem;
+        color: var(--text-muted);
+        margin-top: 4px;
+    }
 
-        <!-- 2. Recent Tickets Card (Large Table) -->
-        <div class="content-card" style="background: white; border-radius: 16px; border: 1px solid #e2e8f0; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); overflow: hidden;">
-            <div style="padding: 25px 35px; border-bottom: 2px solid #f8fafc; display: flex; justify-content: space-between; align-items: center;">
-                <h3 style="margin: 0; color: #0f172a; font-size: 1.4rem; font-weight: 700;">Recent Tickets</h3>
-                <a href="{{ route('tickets.index') }}" style="color: #3b82f6; text-decoration: none; font-weight: 600; font-size: 0.95rem;">View All Activity &rarr;</a>
-            </div>
-            
-            <div style="overflow-x: auto;">
-                <table style="width: 100%; border-collapse: collapse;">
-                    <thead>
-                        <tr style="background: #f8fafc;">
-                            <th style="padding: 20px 35px; text-align: left; color: #475569; font-size: 0.85rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em;">Ticket ID</th>
-                            <th style="padding: 20px 35px; text-align: left; color: #475569; font-size: 0.85rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em;">Subject</th>
-                            <th style="padding: 20px 35px; text-align: left; color: #475569; font-size: 0.85rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em;">Category</th>
-                            <th style="padding: 20px 35px; text-align: left; color: #475569; font-size: 0.85rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em;">Status</th>
-                            <th style="padding: 20px 35px; text-align: left; color: #475569; font-size: 0.85rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em;">Created Date</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @forelse(\App\Models\Ticket::where('user_id', auth()->id())->latest()->take(5)->get() as $ticket)
-                        <tr style="border-bottom: 1px solid #f1f5f9; transition: background 0.2s; cursor: pointer;" 
-                            onmouseover="this.style.background='#f8fafc'" 
-                            onmouseout="this.style.background='transparent'"
-                            onclick="window.location='{{ route('tickets.show', $ticket->id) }}'">
-                            
-                            <td style="padding: 25px 35px; font-weight: 700; color: #1e293b; font-size: 1rem;">
-                                <span style="color: #94a3b8; font-weight: 400;">#</span>{{ str_pad($ticket->id, 4, '0', STR_PAD_LEFT) }}
-                            </td>
-                            <td style="padding: 25px 35px; color: #0f172a; font-weight: 600; font-size: 1.1rem;">{{ $ticket->title }}</td>
-                           <td style="padding: 25px 35px;">
-                                <span style="background: #eff6ff; color: #1d4ed8; padding: 6px 14px; border-radius: 8px; font-size: 0.85rem; font-weight: 700; border: 1px solid #dbeafe;">
-                                    {{ $ticket->department->name ?? 'Unassigned' }}
-                                </span>
-                            </td>
-                            <td style="padding: 25px 35px;">
-                                <span style="background: {{ $ticket->status == 'In Progress' ? '#fff7ed' : ($ticket->status == 'Resolved' ? '#f0fdf4' : '#f8fafc') }}; 
-                                            color: {{ $ticket->status == 'In Progress' ? '#9a3412' : ($ticket->status == 'Resolved' ? '#166534' : '#64748b') }}; 
-                                            padding: 8px 16px; border-radius: 8px; font-size: 0.9rem; font-weight: 700; display: inline-block; min-width: 110px; text-align: center; border: 1px solid {{ $ticket->status == 'In Progress' ? '#ffedd5' : ($ticket->status == 'Resolved' ? '#dcfce7' : '#e2e8f0') }};">
-                                    {{ $ticket->status }}
-                                </span>
-                            </td>
-                            <td style="padding: 25px 35px; color: #64748b; font-size: 1rem;">{{ $ticket->created_at->format('M d, Y') }}</td>
-                        </tr>
-                        @empty
-                        <tr>
-                            <td colspan="5" style="padding: 80px; text-align: center; color: #94a3b8; font-size: 1.2rem;">
-                                No recent activity found. <br>
-                                <a href="{{ route('tickets.create') }}" style="color: #3b82f6; text-decoration: none; font-weight: 700;">Submit a new ticket to get started.</a>
-                            </td>
-                        </tr>
-                        @endforelse
-                    </tbody>
-                </table>
-            </div>
+    .ticket-row {
+        border-bottom: 1px solid #f1f5f9;
+        transition: background 0.15s;
+        cursor: pointer;
+    }
+    .ticket-row:last-child { border-bottom: none; }
+    .ticket-row:hover { background: #f8fafc; }
+
+    .progress-bar-track {
+        height: 8px;
+        background: #e2e8f0;
+        border-radius: 4px;
+        overflow: hidden;
+    }
+    .progress-bar-fill {
+        height: 100%;
+        background: linear-gradient(90deg, #3b82f6, #10b981);
+        border-radius: 4px;
+        transition: width 1s ease;
+    }
+
+    .quick-action {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+        padding: 20px;
+        background: white;
+        border: 1px solid var(--border);
+        border-radius: 14px;
+        text-decoration: none;
+        color: var(--text);
+        font-weight: 600;
+        font-size: 0.88rem;
+        transition: all 0.2s;
+        box-shadow: var(--card-shadow);
+    }
+    .quick-action:hover {
+        border-color: var(--primary);
+        background: var(--primary-light);
+        color: var(--primary);
+        transform: translateY(-2px);
+    }
+    .quick-action-icon {
+        width: 44px; height: 44px;
+        border-radius: 12px;
+        display: flex; align-items: center; justify-content: center;
+        font-size: 1.1rem;
+    }
+</style>
+
+{{-- Page Header --}}
+<div style="margin-bottom: 28px;">
+    <h1 style="font-size: 1.75rem; font-weight: 800; color: var(--text); margin-bottom: 4px;">
+        Good day, {{ auth()->user()->name }} 👋
+    </h1>
+    <p style="color: var(--text-muted); font-size: 0.95rem;">
+        Here's a summary of your report activity.
+    </p>
+</div>
+
+{{-- Stats Grid --}}
+<div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; margin-bottom: 28px;">
+
+    <div class="stat-card">
+        <div class="stat-icon" style="background: #eff6ff;">🎫</div>
+        <div>
+            <div class="stat-label">Total Reports</div>
+            <div class="stat-value">{{ $total }}</div>
+            <div class="stat-sub">All submitted</div>
         </div>
     </div>
-    @endsection
+
+    <div class="stat-card">
+        <div class="stat-icon" style="background: #fffbeb;">🕒</div>
+        <div>
+            <div class="stat-label">Pending</div>
+            <div class="stat-value" style="color: #f59e0b;">{{ $pending }}</div>
+            <div class="stat-sub">Awaiting action</div>
+        </div>
+    </div>
+
+    <div class="stat-card">
+        <div class="stat-icon" style="background: #fff7ed;">🔄</div>
+        <div>
+            <div class="stat-label">In Progress</div>
+            <div class="stat-value" style="color: #f97316;">{{ $inProgress }}</div>
+            <div class="stat-sub">Being handled</div>
+        </div>
+    </div>
+
+    <div class="stat-card">
+        <div class="stat-icon" style="background: #f0fdf4;">✅</div>
+        <div>
+            <div class="stat-label">Resolved</div>
+            <div class="stat-value" style="color: #10b981;">{{ $resolved }}</div>
+            <div class="stat-sub">Completed</div>
+        </div>
+    </div>
+
+</div>
+
+{{-- Recent Tickets --}}
+<div class="card-base" style="overflow: hidden;">
+    <div style="padding: 20px 28px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center;">
+        <div>
+            <h3 style="font-size: 1rem; font-weight: 700; color: var(--text); margin: 0;">Recent Reports</h3>
+            <p style="font-size: 0.8rem; color: var(--text-muted); margin: 2px 0 0;">Your 5 most recently submitted reports</p>
+        </div>
+        <a href="{{ route('tickets.index') }}" class="btn-primary-custom" style="font-size: 0.82rem; padding: 8px 16px;">
+            View All <i class="fas fa-arrow-right"></i>
+        </a>
+    </div>
+
+    <div style="overflow-x: auto;">
+        <table style="width: 100%; border-collapse: collapse;">
+            <thead>
+                <tr style="background: #f8fafc;">
+                    <th style="padding: 14px 28px; text-align: left; font-size: 0.72rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.06em;">Ticket ID</th>
+                    <th style="padding: 14px 28px; text-align: left; font-size: 0.72rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.06em;">Subject</th>
+                    <th style="padding: 14px 28px; text-align: left; font-size: 0.72rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.06em;">Department</th>
+                    <th style="padding: 14px 28px; text-align: left; font-size: 0.72rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.06em;">Priority</th>
+                    <th style="padding: 14px 28px; text-align: left; font-size: 0.72rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.06em;">Status</th>
+                    <th style="padding: 14px 28px; text-align: left; font-size: 0.72rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.06em;">Date</th>
+                </tr>
+            </thead>
+            <tbody>
+                @forelse($recentTickets as $ticket)
+                <tr class="ticket-row" onclick="window.location='{{ route('tickets.show', $ticket->id) }}'">
+                    <td style="padding: 16px 28px; font-weight: 700; font-size: 0.9rem; color: var(--text-muted);">
+                        #{{ str_pad($ticket->id, 4, '0', STR_PAD_LEFT) }}
+                    </td>
+                    <td style="padding: 16px 28px; font-weight: 600; color: var(--text); font-size: 0.9rem;">
+                        {{ Str::limit($ticket->title, 35) }}
+                    </td>
+                    <td style="padding: 16px 28px;">
+                        <span class="badge-dept">{{ $ticket->department->name ?? 'N/A' }}</span>
+                    </td>
+                    <td style="padding: 16px 28px;">
+                        @if($ticket->priority == 'High')
+                            <span class="badge-status badge-priority-high"><i class="fas fa-circle" style="font-size: 0.5rem;"></i> High</span>
+                        @elseif($ticket->priority == 'Medium')
+                            <span class="badge-status badge-priority-medium"><i class="fas fa-circle" style="font-size: 0.5rem;"></i> Medium</span>
+                        @else
+                            <span class="badge-status badge-priority-low"><i class="fas fa-circle" style="font-size: 0.5rem;"></i> Low</span>
+                        @endif
+                    </td>
+                    <td style="padding: 16px 28px;">
+                        @if($ticket->status == 'Pending')
+                            <span class="badge-status badge-pending">⏳ Pending</span>
+                        @elseif($ticket->status == 'In Progress')
+                            <span class="badge-status badge-progress">🔄 In Progress</span>
+                        @elseif($ticket->status == 'Resolved')
+                            <span class="badge-status badge-resolved">✅ Resolved</span>
+                        @else
+                            <span class="badge-status badge-cancelled">✗ Cancelled</span>
+                        @endif
+                    </td>
+                    <td style="padding: 16px 28px; font-size: 0.85rem; color: var(--text-muted);">
+                        {{ $ticket->created_at->format('M d, Y') }}
+                    </td>
+                </tr>
+                @empty
+                <tr>
+                    <td colspan="6" style="padding: 60px; text-align: center;">
+                        <div style="font-size: 2.5rem; margin-bottom: 12px;">📋</div>
+                        <div style="font-size: 1rem; font-weight: 600; color: var(--text-muted); margin-bottom: 8px;">No reports yet</div>
+                        <a href="{{ route('tickets.create') }}" class="btn-primary-custom" style="font-size: 0.85rem; padding: 10px 20px;">
+                            <i class="fas fa-plus"></i> Submit your first report
+                        </a>
+                    </td>
+                </tr>
+                @endforelse
+            </tbody>
+        </table>
+    </div>
+</div>
+
+@endsection
