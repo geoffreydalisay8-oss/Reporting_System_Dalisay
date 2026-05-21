@@ -16,11 +16,11 @@ public function index(Request $request)
     $user = auth()->user();
     $search = $request->input('search');
     $category = $request->input('category');
-    $query = Ticket::with('user');
 
     // 1. Start the query (Do NOT use ->get() yet)
     $query = Ticket::where('user_id', $user->id)
-                   ->where('status', '!=', 'Cancelled');
+                   ->where('status', '!=', 'Cancelled')
+                   ->with('department'); // ← added
 
     // 2. Add Search Filter if provided
     if ($search) {
@@ -32,7 +32,7 @@ public function index(Request $request)
 
     // 3. Add Category Filter if provided
     if ($category && $category !== 'all') {
-        $query->where('type', $category);
+        $query->where('department_id', $category); // ← fixed typo was 'departmnet'
     }
 
     // 4. Finalize: Sort and then Fetch the data
@@ -47,48 +47,47 @@ public function index(Request $request)
         return view('tickets.create');
     }
 
-    // Save a new incident/complaint
-    public function store(Request $request)
-    {
-        $validated = $request->validate([
-            'title'       => 'required|string|max:255',
-            'description' => 'required|string',
-            'type'        => 'required|in:Incident,Complaint',
-            'priority'    => 'required|in:Low,Medium,High',
-            'attachment'  => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
+    // Save a new incident/complaintpublic function store(Request $request)
+public function store(Request $request)
+{
+    $validated = $request->validate([
+        'title'         => 'required|string|max:255',
+        'description'   => 'required|string',
+        'department_id' => 'required|exists:departments,id',
+        'priority'      => 'required|in:Low,Medium,High',
+        'attachment'    => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
+    ]);
+
+    DB::beginTransaction();
+
+    try {
+        $ticket = Ticket::create([
+            'user_id'       => Auth::id(),
+            'department_id' => $validated['department_id'],
+            'title'         => $validated['title'],
+            'description'   => $validated['description'],
+            'priority'      => $validated['priority'],
+            'status'        => 'Pending',
         ]);
 
-        $ticket = Ticket::create([
-    'user_id'     => Auth::id(),
-    'type'        => $validated['type'],
-    'title'       => $validated['title'],
-    'description' => $validated['description'],
-    'priority'    => $validated['priority'],
-    'status'      => 'Pending', // Stay consistent with your Admin logic
-]);
-        
-        
-        TicketHistory::create([
-        'ticket_id'  => $ticket->id,
-        'user_id'    => Auth::id(),
-        'field_name' => 'created', // matches the logic in your dashboard blade
-        'old_value'  => null,
-        'new_value'  => 'Ticket Created',
-    ]);
-if ($request->hasFile('attachment')) {
-    $file = $request->file('attachment');
-    
-    // This saves the physical file to storage/app/public/attachments
-    $path = $file->store('attachments', 'public');
+        if ($request->hasFile('attachment')) {
+            $file = $request->file('attachment');
+            $path = $file->store('attachments', 'public');
 
-    // This inserts the row into the database table from your screenshot
-    $ticket->attachments()->create([
-        'file_name' => $file->getClientOriginalName(), // Saves to 'file_name' column
-        'file_path' => $path,                          // Saves to 'file_path' column
-    ]);
-}
+            $ticket->attachments()->create([
+                'file_name' => $file->getClientOriginalName(),
+                'file_path' => $path,
+            ]);
+        }
+
+        DB::commit();
         return redirect()->route('tickets.index')->with('success', 'Report submitted successfully!');
+
+    } catch (\Exception $e) {
+        DB::rollback();
+        return back()->with('error', 'Failed to submit report: ' . $e->getMessage())->withInput();
     }
+}
 
     // View specific ticket details 
     public function show($id)
@@ -117,19 +116,19 @@ public function dashboard()
     $userId = Auth::id();
 
     // 1. Manually calculate stats using Eloquent
-    // This replaces your 'CALL GetUserStats(?)' procedure
-    $stats = [
-        'total'    => Ticket::where('user_id', $userId)->count(),
-        'pending'  => Ticket::where('user_id', $userId)->where('status', 'Pending')->count(),
-        'resolved' => Ticket::where('user_id', $userId)->where('status', 'Resolved')->count(),
+     $statsResult = DB::select('CALL GetUserStats(?)', [$userId]);
+     $stats = [
+        'total'      => $statsResult[0]->total,
+        'pending'    => $statsResult[0]->pending,
+        'resolved'   => $statsResult[0]->resolved,
+        'in_progress'=> $statsResult[0]->in_progress,
+        'cancelled'  => $statsResult[0]->cancelled,
     ];
+
 
     // 2. Manually fetch recent tickets using Eloquent
     // This replaces your 'CALL GetUserRecentTickets(?)' procedure
-    $recentTickets = Ticket::where('user_id', $userId)
-                           ->latest()
-                           ->take(5)
-                           ->get();
+    $recentTickets = DB::select('CALL GetUserRecentTickets(?, ?)', [$userId, 5]);
 
     return view('tickets.dashboard', compact('stats', 'recentTickets'));
 }
@@ -165,42 +164,29 @@ public function dashboard()
 public function cancel($id)
 {
     $ticket = Ticket::findOrFail($id);
-    $oldStatus = $ticket->status;
 
-    // 1. Security Check
     if ($ticket->user_id !== auth()->id()) {
         abort(403);
     }
 
-    // 2. Logic: Block cancellation if it's already in progress or completed
     if (in_array($ticket->status, ['In Progress', 'Resolved', 'Cancelled'])) {
         return back()->with('error', 'You cannot cancel a ticket that is already in progress or completed.');
     }
 
-    // 3. Manual Logging: Replace the trigger with a database transaction
     DB::beginTransaction();
     try {
-        // Update the ticket
         $ticket->update(['status' => 'Cancelled']);
 
-        // Manually create the history record (replacing the database trigger)
-        TicketHistory::create([
-            'ticket_id'   => $ticket->id,
-            'user_id'     => auth()->id(),
-            'status_from' => $oldStatus,
-            'status_to'   => 'Cancelled',
-            'comment'     => 'System: Ticket marked as Cancelled by user',
-            'created_at'  => now(),
-        ]);
+        // ← REMOVED manual TicketHistory::create() — trigger handles it now
 
         DB::commit();
         return back()->with('success', 'Ticket successfully cancelled.');
         
     } catch (\Exception $e) {
         DB::rollback();
-        return back()->with('error', 'Failed to cancel the ticket. Please try again.');
+        return back()->with('error', $e->getMessage());
     }
-    }
+}
 public function markAsReadAndRedirect($id)
 {
     $notification = auth()->user()->notifications()->findOrFail($id);
@@ -213,6 +199,3 @@ public function markAsReadAndRedirect($id)
 }
 
 }
-
-
-

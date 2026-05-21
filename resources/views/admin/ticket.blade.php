@@ -16,13 +16,18 @@
             </div>
         </div>
 
-        <div class="col-lg-6">
-            <select name="type" class="form-select border-primary border-2 shadow-none">
-                <option value="all">All Types</option>
-                <option value="Complaint" {{ request('type') == 'Complaint' ? 'selected' : '' }}>Complaint</option>
-                <option value="Incident" {{ request('type') == 'Incident' ? 'selected' : '' }}>Incident</option>
-            </select>
-        </div>
+       <div class="col-lg-5 col-md-4">
+                <select name="category" class="form-select border-primary border-2 shadow-none">
+                    <option value="all">All Departments</option>
+                    @foreach(\App\Models\Department::all() as $dept)
+                        <option value="{{ $dept->id }}" {{ request('category') == $dept->id ? 'selected' : '' }}>
+                            {{ $dept->name }}
+                        </option>
+                    @endforeach
+                </select>
+            </div>
+        </form>
+    </div>
         </form>
 </div>
 
@@ -32,7 +37,7 @@
                 <tr>
                     <th class="ps-4 py-3 text-uppercase text-secondary small" style="letter-spacing: 1px;">Ticket</th>
                     <th class="py-3 text-uppercase text-secondary small" style="letter-spacing: 1px;">Title & Reporter</th>
-                    <th class="py-3 text-uppercase text-secondary small" style="letter-spacing: 1px;">Type</th>
+                    <th class="py-3 text-uppercase text-secondary small" style="letter-spacing: 1px;">department</th>
                     <th class="py-3 text-uppercase text-secondary small" style="letter-spacing: 1px;">Priority</th>
                     <th class="py-3 text-uppercase text-secondary small" style="letter-spacing: 1px;">Status</th>
                     <th class="py-3 text-center text-uppercase text-secondary small" style="letter-spacing: 1px; width: 300px;">Action</th>
@@ -48,7 +53,7 @@
                         <div class="fw-bold text-dark" style="font-size: 1rem;">{{ $ticket->title }}</div>
                         <div class="text-muted small">{{ $ticket->user->name ?? 'Guest' }}</div>
                     </td>
-                    <td><span class="badge bg-light text-primary border">{{ $ticket->type }}</span></td>
+                    <td><span class="badge bg-light text-primary border">{{ $ticket->department->name ?? 'N/A' }}</span></td>
                     <td>
                         <span class="fw-bold" style="color: {{ $ticket->priority == 'High' ? '#ef4444' : ($ticket->priority == 'Medium' ? '#f59e0b' : '#10b981') }};">
                             ● {{ $ticket->priority }}
@@ -103,7 +108,7 @@
     document.addEventListener('DOMContentLoaded', function() {
         const filterForm = document.getElementById('filterForm');
         const searchInput = filterForm.querySelector('input[name="search"]');
-        const typeSelect = filterForm.querySelector('select[name="type"]');
+        const typeSelect = filterForm.querySelector('select[name="category"]');
 
         // 1. Automatic for the Dropdown (Instant)
         typeSelect.addEventListener('change', function() {

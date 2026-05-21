@@ -9,11 +9,11 @@ class Ticket extends Model
    protected $fillable = [
     'user_id',
     'title',
-    'description',
-    'type',      
+    'description',   
     'priority',
     'status',
     'assigned_to',
+    'department_id',
 ];
 
     public function user()
@@ -46,5 +46,9 @@ public function assigned()
 public function histories()
 {
     return $this->hasMany(TicketHistory::class)->latest();
+}
+
+public function department() {
+    return $this->belongsTo(Department::class);
 }
 }

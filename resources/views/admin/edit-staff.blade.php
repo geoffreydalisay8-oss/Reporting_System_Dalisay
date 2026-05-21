@@ -9,7 +9,7 @@
     
     .form-input { 
         width: 100%; padding: 12px; border: 1px solid #e1e1e1; border-radius: 8px; outline: none; transition: 0.2s; 
-        box-sizing: border-box; /* Crucial for padding */
+        box-sizing: border-box;
     }
     .form-input:focus { border-color: #4a90e2; box-shadow: 0 0 0 3px rgba(74, 144, 226, 0.1); }
     
@@ -44,12 +44,16 @@
                 
                 <div class="form-group">
                     <label>Full Name</label>
-                    <input type="text" name="name" class="form-input" placeholder="e.g. John Doe" value="{{ $staff->name ?? old('name') }}" required>
+                    <input type="text" name="name" class="form-input" 
+                           placeholder="e.g. John Doe" 
+                           value="{{ $staff->name ?? old('name') }}" required>
                 </div>
 
                 <div class="form-group">
                     <label>Email Address</label>
-                    <input type="email" name="email" class="form-input" placeholder="john@example.com" value="{{ $staff->email ?? old('email') }}" required>
+                    <input type="email" name="email" class="form-input" 
+                           placeholder="john@example.com" 
+                           value="{{ $staff->email ?? old('email') }}" required>
                 </div>
 
                 @if(!isset($staff))
@@ -59,15 +63,26 @@
                 </div>
                 @endif
 
+                @if(isset($staff))
                 <div class="form-group">
-                    <label>Type</label>
-                    <select name="type" class="form-input" required>
-                        <option value="">-- Select Type --</option>
-                        <option value="Complaint" {{ (isset($staff) && $staff->type == 'Complaint') ? 'selected' : '' }}>Complaint</option>
-                        <option value="Incident" {{ (isset($staff) && $staff->type == 'Incident') ? 'selected' : '' }}>Incident</option>
+                    <label>New Password <span style="color:#999; font-weight:400;">(leave blank to keep current)</span></label>
+                    <input type="password" name="password" class="form-input" placeholder="••••••••">
+                </div>
+                @endif
+
+                <div class="form-group">
+                    <label>Department</label>
+                    <select name="department_id" class="form-input" required>
+                        <option value="">-- Select Department --</option>
+                        @foreach($departments as $dept)
+                            <option value="{{ $dept->id }}" 
+                                {{ (isset($staff) && $staff->department_id == $dept->id) || old('department_id') == $dept->id ? 'selected' : '' }}>
+                                {{ $dept->name }}
+                            </option>
+                        @endforeach
                     </select>
                 </div>
-                </div>
+
 
                 <button type="submit" class="btn-submit">
                     {{ isset($staff) ? 'Update Staff Member' : 'Create Staff Account' }}

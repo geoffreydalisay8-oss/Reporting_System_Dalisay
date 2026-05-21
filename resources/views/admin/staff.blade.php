@@ -2,13 +2,11 @@
 
 @section('content')
 <style>
-    /* Increase the overall container feel */
     .main-wrapper { 
         padding: 20px; 
         max-width: 100%; 
     }
 
-    /* Larger Header Section */
     .header-section { 
         display: flex; 
         justify-content: space-between; 
@@ -21,7 +19,6 @@
         color: #2c3e50; 
     }
 
-    /* Larger Table Card */
     .content-card { 
         background: white; 
         border-radius: 15px; 
@@ -29,11 +26,10 @@
         padding: 10px;
     }
 
-    /* High-padding Table */
     .staff-table { 
         width: 100%; 
         border-collapse: collapse; 
-        font-size: 1.1rem; /* Larger base font */
+        font-size: 1.1rem;
     }
     .staff-table th { 
         background: #f8f9fa; 
@@ -45,12 +41,11 @@
         letter-spacing: 1px;
     }
     .staff-table td { 
-        padding: 25px 20px; /* Deep padding for "larger" feel */
+        padding: 25px 20px;
         border-bottom: 1px solid #eee; 
         vertical-align: middle;
     }
 
-    /* Larger Badges */
     .dept-badge { 
         padding: 8px 16px; 
         font-size: 0.85rem; 
@@ -58,7 +53,6 @@
         font-weight: bold; 
     }
 
-    /* Larger Action Buttons */
     .btn-action { 
         padding: 10px 20px; 
         font-size: 0.9rem; 
@@ -67,7 +61,6 @@
         transition: 0.3s;
     }
     
-    /* Primary Add Button */
     .btn-add {
         font-size: 1.1rem;
         padding: 10px 20px;
@@ -93,7 +86,7 @@
                 <tr>
                     <th>Name</th>
                     <th>Email</th>
-                    <th>Assignment Type</th>
+                    <th>Department</th>
                     <th>Joined Date</th>
                     <th style="text-align: center;">Actions</th>
                 </tr>
@@ -104,9 +97,15 @@
                     <td style="font-weight: bold; color: #333;">{{ $member->name }}</td>
                     <td style="color: #666;">{{ $member->email }}</td>
                     <td>
-                        <span class="dept-badge" style="background: #e9ecef; color: #495057; border: 1px solid #dee2e6;">
-                            {{ $member->type ?? 'Unassigned' }}
-                        </span>
+                        @if($member->department)
+                            <span class="dept-badge" style="background: #e3f0fb; color: #4a90e2; border: 1px solid #b3d4f5;">
+                                {{ $member->department->name }}
+                            </span>
+                        @else
+                            <span class="dept-badge" style="background: #e9ecef; color: #495057; border: 1px solid #dee2e6;">
+                                Unassigned
+                            </span>
+                        @endif
                     </td>
                     <td style="color: #888;">{{ $member->created_at->format('M d, Y') }}</td>
                     <td>

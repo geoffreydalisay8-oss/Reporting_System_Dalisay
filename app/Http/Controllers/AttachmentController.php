@@ -12,7 +12,7 @@ class AttachmentController extends Controller
     $request->validate([
         'title' => 'required',
         'description' => 'required',
-        'type' => 'required',
+        'department_id' => 'required|exists:departments,id',
         'priority' => 'required',
         'file' => 'nullable|file|mimes:pdf,jpg,png,doc,docx|max:2048',
     ]);
@@ -22,7 +22,7 @@ class AttachmentController extends Controller
         'user_id' => auth()->id(),
         'title' => $request->title,
         'description' => $request->description,
-        'type' => $request->type,
+        'department_id' => $request->department_id,
         'priority' => $request->priority,
         'status' => 'Pending',
     ]);

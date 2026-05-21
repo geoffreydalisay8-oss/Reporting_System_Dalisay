@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 use Illuminate\Support\Facades\DB;
 use App\Models\TicketHistory;
 use App\Models\Ticket; 
+use App\Models\Department; 
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -17,8 +18,9 @@ class AdminDashboardController extends Controller
     public function index(Request $request)
 {
     $user = Auth::user();
+    
 
-    if ($user->role === 'admin') {
+    if ($user->role === 'admin') { 
         $totalIncidents = Ticket::count();
         $pendingIncidents = Ticket::where('status', 'Pending')->count();
         $resolvedIncidents = Ticket::where('status', 'Resolved')->count();
@@ -74,49 +76,47 @@ class AdminDashboardController extends Controller
     /**
      * Ticket Management List
      */
-    public function ticket(Request $request) // Added Request parameter
-{
-    $user = auth()->user();
-    
-    // Capture search and type from the URL (?search=xyz&type=Incident)
-    $search = $request->input('search');
-    $type = $request->input('type');
+   public function ticket(Request $request)
+    {
+        $user = auth()->user();
+        
+        // 1. Initialize the query
+        $ticketQuery = Ticket::query();
 
-    // 1. Initialize the query
-    $ticketQuery = Ticket::query();
+        // 2. Apply Role-Based Security
+        if ($user->role !== 'admin') {
+            // FIX: Staff ONLY see tickets assigned to them. 
+            // We removed the 'orWhere' that was causing unassigned tickets to show up.
+            $ticketQuery->where('assigned_to', $user->id);
+        }
 
-    // 2. Apply Role-Based Security
-    if ($user->role !== 'admin') {
-        // Staff/Employees only see tickets assigned to them
-        $ticketQuery->where('assigned_to', $user->id);
+        // 3. Apply Search Filter
+        $search = $request->input('search');
+        if ($search) {
+            $ticketQuery->where(function($q) use ($search) {
+                $q->where('title', 'like', "%{$search}%")
+                  ->orWhere('id', 'like', "%{$search}%")
+                  ->orWhereHas('user', function($userQuery) use ($search) {
+                      $userQuery->where('name', 'like', "%{$search}%");
+                  });
+            });
+        }
+
+        // 4. Apply Department Filter
+        $category = $request->input('category');
+        if ($category && $category !== 'all') {
+            $ticketQuery->where('department_id', $category);
+        }
+
+        // 5. Execute query with relationships
+        $tickets = $ticketQuery->with(['user', 'department'])
+                               ->orderBy('created_at', 'desc')
+                               ->get();
+
+        $staffMembers = User::where('role', 'staff')->get();
+
+        return view('admin.ticket', compact('tickets', 'staffMembers'));
     }
-
-    // 3. Apply Search Filter (Title, Reporter Name, or ID)
-    if ($search) {
-        $ticketQuery->where(function($q) use ($search) {
-            $q->where('title', 'like', "%{$search}%")
-              ->orWhere('id', 'like', "%{$search}%")
-              ->orWhereHas('user', function($userQuery) use ($search) {
-                  $userQuery->where('name', 'like', "%{$search}%");
-              });
-        });
-    }
-
-    // 4. Apply Type Filter (Complaint or Incident)
-    if ($type && $type !== 'all') {
-        $ticketQuery->where('type', $type);
-    }
-
-    // 5. Execute query with relationships and ordering
-    $tickets = $ticketQuery->with(['user', 'assigned'])
-                           ->orderBy('created_at', 'desc')
-                           ->get();
-
-    $staffMembers = User::where('role', 'staff')->get();
-
-    return view('admin.ticket', compact('tickets', 'staffMembers'));
-}
-
     /**
      * Assign Ticket to Staff and auto-update status
      */
@@ -125,67 +125,43 @@ class AdminDashboardController extends Controller
     $ticket = Ticket::findOrFail($id);
     $newStaffId = $request->assigned_to;
 
-    // START THE TRANSACTION
     DB::beginTransaction();
 
     try {
         if (empty($newStaffId)) {
-            // UNASSIGN LOGIC
             $ticket->update([
                 'assigned_to' => null,
                 'status' => 'Pending' 
             ]);
-            $logMessage = "Staff member removed. Ticket is now Unassigned.";
         } else {
-            // ASSIGN LOGIC
             $ticket->update([
                 'assigned_to' => $newStaffId,
                 'status' => 'In Progress'
             ]);
-            $staffName = User::find($newStaffId)->name;
-            $logMessage = "Ticket assigned to " . $staffName;
         }
 
-        // Action 2: Always log the action
-        TicketHistory::create([
-            'ticket_id' => $ticket->id,
-            'user_id' => auth()->id(),
-            'status_to' => $ticket->status,
-            'comment' => $logMessage
-        ]);
+        // ← REMOVED manual TicketHistory::create() — trigger handles it now
 
-        // IF EVERYTHING IS OK, SAVE PERMANENTLY
         DB::commit();
-
         return back()->with('success', 'Assignment updated.');
 
     } catch (\Exception $e) {
-        // IF ANYTHING FAILS, UNDO EVERYTHING
         DB::rollback();
-
-        return back()->with('error', 'Failed to update assignment. Please try again.');
+        return back()->with('error', $e->getMessage());
     }
 }
     /**
      * General Status Update
      */
- public function updateStatus(Request $request, $id)
+public function updateStatus(Request $request, $id)
 {
     $ticket = Ticket::findOrFail($id);
-    $oldStatus = $ticket->status;
 
     $ticket->update(['status' => $request->status]);
 
-    // Match your migration columns: status_from, status_to, comment
-    TicketHistory::create([
-        'ticket_id'   => $ticket->id,
-        'user_id'     => auth()->id(),
-        'status_from' => $oldStatus,
-        'status_to'   => $request->status,
-        'comment'     => ($request->status == 'Resolved') ? 'resolved' : 'status_updated',
-    ]);
+    // ← REMOVED manual TicketHistory::create() — trigger handles it now
 
-    return back()->with('success', 'Status updated and logged!');
+    return back()->with('success', 'Status updated!');
 }
 
 public function editStaff($id)
@@ -195,7 +171,8 @@ public function editStaff($id)
     }
 
     $staff = User::findOrFail($id);
-    return view('admin.edit-staff', compact('staff'));
+     $departments = Department::all();
+    return view('admin.edit-staff', compact('staff', 'departments'));
 }
     public function createStaff()
     {
@@ -203,13 +180,13 @@ public function editStaff($id)
         if (Auth::user()->role !== 'admin') { 
             abort(403, 'Unauthorized action.'); 
         }
-
-        return view('admin.create-staff');
+         $departments = Department::all(); // 
+        return view('admin.create-staff', compact('departments'));
     }
     public function manageStaff() 
     {
         if (Auth::user()->role !== 'admin') { abort(403); }
-        $staff = User::where('role', 'staff')->get();
+        $staff = User::where('role', 'staff')->with('department')->get();
         return view('admin.staff', compact('staff'));
     }
 
@@ -221,14 +198,14 @@ public function editStaff($id)
             'name'       => 'required|string|max:255|unique:users,name',
             'email'      => 'required|email|unique:users,email',
             'password'   => 'required|min:8', 
-            'type'     => 'required|in:Complaint,Incident',
+            'department_id' => 'required|exists:departments,id',
         ]);
 
         User::create([
             'name'              => $validated['name'],
             'email'             => $validated['email'],
             'password'          => Hash::make($validated['password']),
-            'type'              => $validated['type'],
+            'department_id'     => $validated['department_id'],
             'role'              => 'staff', 
             'email_verified_at' => now(),
         ]);
@@ -245,12 +222,12 @@ public function editStaff($id)
     $request->validate([
         'name'  => 'required|string|max:255|unique:users,name,' . $id,
         'email' => 'required|email|unique:users,email,' . $id,
-        'type'  => 'required|string',
+        'department_id' => 'required|exists:departments,id',
         'password' => 'nullable|min:8', // Allow password to be empty (not changed)
     ]);
 
     // Prepare data to update
-    $data = $request->only('name', 'email', 'type');
+    $data = $request->only('name', 'email', 'department_id');
 
     // Only update password if a new one was provided
     if ($request->filled('password')) {
@@ -287,5 +264,29 @@ public function editStaff($id)
     $activities = $query->latest()->paginate(15);
 
     return view('admin.activity-log', compact('activities'));
+}
+
+public function indexDepartments()
+{
+    if (auth()->user()->role !== 'admin') abort(403);
+    
+    $departments = Department::withCount('users')->get();
+    return view('admin.departments.index', compact('departments'));
+}
+
+/**
+ * Store New Department
+ */
+public function storeDepartment(Request $request)
+{
+    if (auth()->user()->role !== 'admin') abort(403);
+
+    $validated = $request->validate([
+        'name' => 'required|string|max:255|unique:departments,name',
+    ]);
+
+    Department::create(['name' => $validated['name']]);
+
+    return redirect()->back()->with('success', 'New department added successfully!');
 }
 }

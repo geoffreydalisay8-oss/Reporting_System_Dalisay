@@ -88,17 +88,23 @@
                 <input type="password" name="password" class="form-control" required>
             </div>
 
-            <div class="form-group">
-                <label class="form-label">Assignment Type</label>
-               <select name="type" class="form-select @error('type') is-invalid @enderror">
-                   <option value="" selected disabled>Select Type...</option>
-                    <option value="Complaint">Complaint</option>
-                    <option value="Incident">Incident</option>
-                </select>
-                    @error('type')
-                    <div class="invalid-feedback">{{ $message }}</div>
-                @enderror
-            </div>
+                        <div class="form-group">
+                    <label class="form-label">Department</label>
+                    <select name="department_id" class="form-select @error('department_id') is-invalid @enderror" required>
+                        <option value="" selected disabled>Select Department...</option>
+                        
+                        {{-- Dynamically fetch departments from the database --}}
+                        @foreach(\App\Models\Department::all() as $dept)
+                            <option value="{{ $dept->id }}">
+                                {{ $dept->name }}
+                            </option>
+                        @endforeach
+                    </select>
+                    
+                    @error('department_id')
+                        <div class="invalid-feedback">{{ $message }}</div>
+                    @enderror
+                </div>
             </div>
 
             <button type="submit" class="btn-submit">

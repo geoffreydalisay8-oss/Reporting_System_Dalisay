@@ -2,7 +2,6 @@
 
 @section('content')
 <style>
-    /* Global enhancements for a "Large" feel */
     .form-input-lg {
         width: 100%; 
         padding: 16px 20px; 
@@ -70,22 +69,32 @@
             <!-- Section 1: Classification -->
             <div class="section-header">1. Classification & Urgency</div>
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 30px; margin-bottom: 40px;">
+                
                 <div>
-                    <label style="display: block; font-weight: 600; margin-bottom: 10px; color: #334155;">Report Type <span style="color: #ef4444;">*</span></label>
-                    <select name="type" required class="form-input-lg" style="background-color: #f8fafc; appearance: none;">
-                        <option value="">-- Select Category --</option>
-                        <option value="Incident" {{ old('type') == 'Incident' ? 'selected' : '' }}>🚨 Incident (Something happened/broken)</option>
-                        <option value="Complaint" {{ old('type') == 'Complaint' ? 'selected' : '' }}>💬 Complaint (Grievance/Service issue)</option>
+                    <label style="display: block; font-weight: 600; margin-bottom: 10px; color: #334155;">
+                        Department <span style="color: #ef4444;">*</span>
+                    </label>
+                    <select name="department_id" required class="form-input-lg" style="background-color: #f8fafc; appearance: none;">
+                        <option value="">-- Select Department --</option>
+                        @foreach(\App\Models\Department::all() as $dept)
+                            <option value="{{ $dept->id }}" {{ old('department_id') == $dept->id ? 'selected' : '' }}>
+                                {{ $dept->name }}
+                            </option>
+                        @endforeach
                     </select>
                 </div>
+
                 <div>
-                    <label style="display: block; font-weight: 600; margin-bottom: 10px; color: #334155;">Priority Level <span style="color: #ef4444;">*</span></label>
+                    <label style="display: block; font-weight: 600; margin-bottom: 10px; color: #334155;">
+                        Priority Level <span style="color: #ef4444;">*</span>
+                    </label>
                     <select name="priority" class="form-input-lg" style="background-color: #f8fafc;">
                         <option value="Low">Low - Minor inconvenience</option>
                         <option value="Medium" selected>Medium - Standard response</option>
                         <option value="High">High - Urgent attention</option>
                     </select>
                 </div>
+
             </div>
 
             <!-- Section 2: Details -->
@@ -104,30 +113,31 @@
                     class="form-input-lg" style="resize: vertical;" required>{{ old('description') }}</textarea>
             </div>
 
-                <div class="section-header">3. Supporting Evidence (Optional)</div>
-<div style="margin-bottom: 50px;">
-    <div id="drop-zone" style="border: 2px dashed #cbd5e1; border-radius: 16px; padding: 40px; text-align: center; background: #f8fafc; transition: all 0.3s;">
-        <input type="file" name="file" id="file-upload" style="display: none;" accept=".jpg,.png,.pdf,.doc,.docx">
-        
-        <label for="file-upload" style="cursor: pointer; display: block;">
-            <span style="font-size: 3rem;">📸</span>
-            <p id="file-label" style="font-size: 1.1rem; color: #475569; margin: 10px 0;">
-                <strong>Click to upload</strong> or drag and drop
-            </p>
-            <p style="color: #94a3b8; font-size: 0.9rem;">PNG, JPG, PDF, or DOC up to 2MB</p>
-        </label>
-    </div>
-</div>
+            <!-- Section 3: Attachment -->
+            <div class="section-header">3. Supporting Evidence (Optional)</div>
+            <div style="margin-bottom: 50px;">
+                <div id="drop-zone" style="border: 2px dashed #cbd5e1; border-radius: 16px; padding: 40px; text-align: center; background: #f8fafc; transition: all 0.3s;">
+                    <input type="file" name="attachment" id="file-upload" style="display: none;" accept=".jpg,.png,.pdf,.doc,.docx">
+                    
+                    <label for="file-upload" style="cursor: pointer; display: block;">
+                        <span style="font-size: 3rem;">📸</span>
+                        <p id="file-label" style="font-size: 1.1rem; color: #475569; margin: 10px 0;">
+                            <strong>Click to upload</strong> or drag and drop
+                        </p>
+                        <p style="color: #94a3b8; font-size: 0.9rem;">PNG, JPG, PDF, or DOC up to 2MB</p>
+                    </label>
+                </div>
+            </div>
 
-<script>
-    // Simple script to show the filename after selection
-    document.getElementById('file-upload').onchange = function() {
-        const fileName = this.files[0] ? this.files[0].name : "Click to upload or drag and drop";
-        document.getElementById('file-label').innerHTML = `<strong>Selected:</strong> ${fileName}`;
-        document.getElementById('drop-zone').style.borderColor = "#3498db";
-        document.getElementById('drop-zone').style.background = "#ebf8ff";
-    };
-</script>
+            <script>
+                document.getElementById('file-upload').onchange = function() {
+                    const fileName = this.files[0] ? this.files[0].name : "Click to upload or drag and drop";
+                    document.getElementById('file-label').innerHTML = `<strong>Selected:</strong> ${fileName}`;
+                    document.getElementById('drop-zone').style.borderColor = "#3498db";
+                    document.getElementById('drop-zone').style.background = "#ebf8ff";
+                };
+            </script>
+
             <!-- Action Buttons -->
             <div style="display: flex; gap: 20px; align-items: center; justify-content: flex-end; padding-top: 30px; border-top: 2px solid #f1f5f9;">
                 <a href="{{ route('dashboard') }}" class="btn-lg" style="text-decoration: none; color: #64748b; background: #f1f5f9; border: none; flex: 1; text-align: center;">

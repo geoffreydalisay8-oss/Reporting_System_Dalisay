@@ -5,13 +5,13 @@
         
         <!-- Header Section -->
         <div style="margin-bottom: 40px;">
+            Good day, {{ auth()->user()->name }}
             <h1 style="color: #0f172a; margin: 0; font-size: 2.5rem; font-weight: 800; letter-spacing: -0.025em;">Dashboard Overview</h1>
             <p style="color: #64748b; margin-top: 8px; font-size: 1.1rem;">Welcome back! Here is a summary of your ticket activity.</p>
         </div>
 
         <!-- 1. Stats Grid (Enhanced Large Cards) -->
         <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 24px; margin-bottom: 50px;">
-            
             
             @php
                 $stats = [
@@ -64,9 +64,9 @@
                                 <span style="color: #94a3b8; font-weight: 400;">#</span>{{ str_pad($ticket->id, 4, '0', STR_PAD_LEFT) }}
                             </td>
                             <td style="padding: 25px 35px; color: #0f172a; font-weight: 600; font-size: 1.1rem;">{{ $ticket->title }}</td>
-                            <td style="padding: 25px 35px;">
+                           <td style="padding: 25px 35px;">
                                 <span style="background: #eff6ff; color: #1d4ed8; padding: 6px 14px; border-radius: 8px; font-size: 0.85rem; font-weight: 700; border: 1px solid #dbeafe;">
-                                    {{ $ticket->type ?? 'Incident' }}
+                                    {{ $ticket->department->name ?? 'Unassigned' }}
                                 </span>
                             </td>
                             <td style="padding: 25px 35px;">

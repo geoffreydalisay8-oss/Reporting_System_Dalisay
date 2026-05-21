@@ -1,6 +1,7 @@
 <?php
 
 namespace App\Models;
+use App\Models\Department; 
 
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Database\Factories\UserFactory;
@@ -23,7 +24,7 @@ class User extends Authenticatable implements MustVerifyEmail
         'email',
         'password',
         'role',
-        'type',
+        'department_id',
         'email_verified_at',
     ];
 
@@ -43,5 +44,10 @@ class User extends Authenticatable implements MustVerifyEmail
     public function isAdmin(): bool
     {
         return $this->role === 'admin';
+    }
+
+    public function department()
+    {
+        return $this->belongsTo(Department::class);
     }
 }

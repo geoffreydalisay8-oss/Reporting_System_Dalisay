@@ -24,7 +24,6 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('/tickets', [TicketController::class, 'store'])->name('tickets.store');
     Route::get('/tickets/{id}', [TicketController::class, 'show'])->name('tickets.show');
     Route::post('/tickets/{ticket}/comments', [TicketController::class, 'storeComment'])->name('comments.store');
-    Route::post('/tickets', [AttachmentController::class, 'store'])->name('tickets.store');
     Route::post('/tickets/{id}/cancel', [TicketController::class, 'cancel'])->name('tickets.cancel');
 
     // Profile Routes
@@ -39,30 +38,27 @@ require __DIR__.'/auth.php';
 
 
 // --- ADMIN & STAFF SHARED ROUTES ---
-Route::middleware(['auth', 'role:admin,staff'])->prefix('admin')->group(function () {
-    
-    // Both can see the management dashboard and tickets
-    Route::get('/dashboard', [AdminDashboardController::class, 'index'])->name('admin.dashboard');
-    Route::get('/tickets', [AdminDashboardController::class, 'ticket'])->name('admin.ticket.index');
-    Route::post('/tickets/assign/{id}', [AdminDashboardController::class, 'assignTicket'])->name('admin.tickets.assign');
-    Route::get('/tickets/{id}', [AdminDashboardController::class, 'showTicket'])->name('admin.tickets.show');
-    Route::post('/tickets/{ticket}/comments', [TicketController::class, 'storeComment'])->name('comments.store');
-    
-    
+Route::middleware(['auth', 'role:admin,staff'])
+    ->prefix('admin')
+    ->name('admin.')          // ← ADD THIS
+    ->group(function () {
 
-    // --- ADMIN ONLY SECTION ---
-    // Wrap staff management in another middleware so Staff can't touch it
+    Route::get('/dashboard', [AdminDashboardController::class, 'index'])->name('dashboard');
+    Route::get('/tickets', [AdminDashboardController::class, 'ticket'])->name('ticket.index');
+    Route::post('/tickets/assign/{id}', [AdminDashboardController::class, 'assignTicket'])->name('tickets.assign');
+    Route::get('/tickets/{id}', [AdminDashboardController::class, 'showTicket'])->name('tickets.show');
+    Route::post('/tickets/{ticket}/comments', [TicketController::class, 'storeComment'])->name('comments.store');
+    Route::get('/activity-log', [AdminDashboardController::class, 'activityLog'])->name('activity.log');
+
     Route::middleware(['role:admin'])->group(function () {
-        Route::get('/staff', [AdminDashboardController::class, 'manageStaff'])->name('admin.staff.index');
-        Route::get('/staff/create', [AdminDashboardController::class, 'createStaff'])->name('admin.staff.create');
-        Route::post('/staff/store', [AdminDashboardController::class, 'storeStaff'])->name('admin.staff.store');
-        Route::get('/admin/staff/{id}/edit', [AdminDashboardController::class, 'editStaff'])->name('admin.staff.edit');
-        Route::put('/staff/{id}', [AdminDashboardController::class, 'updateStaff'])->name('admin.staff.update');
-        Route::delete('/staff/{id}', [AdminDashboardController::class, 'destroyStaff'])->name('admin.staff.destroy');
-        Route::get('/admin/tickets/{id}', [AdminDashboardController::class, 'showTicket'])->name('admin.tickets.show');
-        Route::post('/admin/tickets/{id}/status', [AdminDashboardController::class, 'updateStatus'])->name('admin.tickets.updateStatus');
-        Route::get('/admin/activity-log', [AdminDashboardController::class, 'activityLog'])->name('admin.activity.log');
-        
-        
+        Route::get('/staff', [AdminDashboardController::class, 'manageStaff'])->name('staff.index');
+        Route::get('/staff/create', [AdminDashboardController::class, 'createStaff'])->name('staff.create');
+        Route::post('/staff/store', [AdminDashboardController::class, 'storeStaff'])->name('staff.store');
+        Route::get('/staff/{id}/edit', [AdminDashboardController::class, 'editStaff'])->name('staff.edit');
+        Route::put('/staff/{id}', [AdminDashboardController::class, 'updateStaff'])->name('staff.update');
+        Route::delete('/staff/{id}', [AdminDashboardController::class, 'destroyStaff'])->name('staff.destroy');
+        Route::post('/tickets/{id}/status', [AdminDashboardController::class, 'updateStatus'])->name('tickets.updateStatus');
+        Route::get('/departments', [AdminDashboardController::class, 'indexDepartments'])->name('departments.index');
+        Route::post('/departments', [AdminDashboardController::class, 'storeDepartment'])->name('departments.store');
     });
 });

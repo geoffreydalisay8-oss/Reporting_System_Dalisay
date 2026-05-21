@@ -49,6 +49,9 @@
         <a href="{{ route('admin.staff.index') }}" class="{{ request()->routeIs('admin.staff.index') ? 'active' : '' }}">
             <i class="fas fa-users"></i> Manage Staff
         </a>
+        <a href="{{ route('admin.departments.index') }}" class="{{ request()->routeIs('admin.departments.*') ? 'active' : '' }}">
+            <i class="fas fa-building"></i> Manage Departments
+        </a>
     @endif
 
     <a href="{{ route('admin.ticket.index') }}" class="{{ request()->routeIs('admin.ticket.index') ? 'active' : '' }}">
@@ -60,15 +63,29 @@
         <i class="fas fa-history"></i> Activity Log
     </a>
 
+    {{-- Logout INSIDE the sidebar div --}}
     <form action="{{ route('logout') }}" method="POST">
         @csrf
-        <button type="submit" class="btn btn-link" style="color: #e74c3c; text-decoration: none; padding: 12px 15px; width: 100%; text-align: left;">
+        <button type="submit" style="
+            display: block;
+            width: 100%;
+            text-align: left;
+            padding: 12px 15px;
+            background: none;
+            border: none;
+            color: #e74c3c;
+            font-size: 0.9rem;
+            cursor: pointer;
+            border-radius: 8px;
+            margin-top: 20px;
+        ">
             <i class="fas fa-sign-out-alt"></i> Logout
         </button>
     </form>
-</div>
 
-    <div class="main-content">
+</div> {{-- ← sidebar closes HERE --}}
+
+<div class="main-content">
     @yield('content')
 </div>
 

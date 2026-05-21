@@ -58,11 +58,9 @@
                                         <div class="row g-2">
                         @forelse($ticket->attachments as $attachment)
                             <div class="col-3">
-                                <div class="ratio ratio-4x3">
-                                    <img src="{{ asset('storage/' . $attachment->file_path) }}" 
-                                        class="img-fluid rounded border shadow-sm object-fit-cover" 
-                                        alt="Evidence">
-                                </div>
+                                <img src="{{ asset('storage/' . $attachment->file_path) }}" 
+                                    class="img-fluid rounded border shadow-sm"
+                                    alt="Evidence">
                             </div>
                         @empty
                             <p class="text-muted small mb-0">No files uploaded.</p>
