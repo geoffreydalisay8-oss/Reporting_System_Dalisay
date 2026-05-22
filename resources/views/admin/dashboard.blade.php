@@ -111,7 +111,7 @@
 
     <div class="table-card">
         <div class="table-header">
-            {{ Auth::user()->role === 'admin' ? 'Global Recent Activity' : 'My Recent Tasks' }}
+            {{ Auth::user()->role === 'admin' ? 'Recent Activity' : 'My Recent Tasks' }}
         </div>
         <div class="table-responsive">
             <table class="table mb-0 align-middle">
@@ -142,41 +142,6 @@
                     @endforeach
                 </tbody>
             </table>
-            <div style="background: white; border-radius: 12px; padding: 25px; border: 1px solid #f1f5f9;">
-    <h2 style="font-size: 1.5rem; font-weight: 700; color: #0f172a; margin-bottom: 25px;">Recent Activity</h2>
-
-    @foreach($recentActivities as $activity)
-        <div style="display: flex; gap: 15px; padding: 20px 0; border-bottom: 1px solid #f8fafc; align-items: flex-start;">
-            
-            @php
-                $color = '#3b82f6'; // Blue (New/Default)
-                if($activity->status_to == 'Resolved') $color = '#10b981'; // Green
-                if($activity->comment == 'user_added') $color = '#a855f7'; // Purple
-                if($activity->status_to == 'In Progress') $color = '#f97316'; // Orange
-            @endphp
-
-            <div style="width: 10px; height: 10px; border-radius: 50%; background-color: {{ $color }}; margin-top: 6px; flex-shrink: 0;"></div>
-
-            <div>
-                <div style="color: #1e293b; font-size: 1rem; font-weight: 500;">
-                    @if(is_null($activity->status_from) && $activity->status_to == 'Pending')
-                        New ticket created by {{ $activity->user->name }}
-                    @elseif($activity->status_to == 'Resolved')
-                        Ticket <strong>TKT-{{ str_pad($activity->ticket_id, 3, '0', STR_PAD_LEFT) }}</strong> resolved by {{ $activity->user->name }}
-                    @elseif($activity->comment == 'user_added')
-                        New user added: {{ $activity->status_to }}
-                    @else
-                        Ticket <strong>{{ str_pad($activity->ticket_id, 3, '0', STR_PAD_LEFT) }}</strong> status updated
-                    @endif
-                </div>
-                <div style="color: #94a3b8; font-size: 0.85rem; margin-top: 4px;">
-                    {{ $activity->created_at->diffForHumans() }}
-                </div>
-            </div>
-        </div>
-    @endforeach
-</div
-            
         </div>
     </div>
 </div>

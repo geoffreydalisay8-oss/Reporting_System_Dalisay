@@ -126,25 +126,18 @@ class AdminDashboardController extends Controller
     $newStaffId = $request->assigned_to;
 
     DB::beginTransaction();
-
     try {
-        if (empty($newStaffId)) {
-            $ticket->update([
-                'assigned_to' => null,
-                'status' => 'Pending' 
-            ]);
-        } else {
-            $ticket->update([
-                'assigned_to' => $newStaffId,
-                'status' => 'In Progress'
-            ]);
-        }
+        // ✅ Set session variable BEFORE update
+        DB::statement('SET @current_user_id = ?', [Auth::id()]);
 
-        // ← REMOVED manual TicketHistory::create() — trigger handles it now
+        if (empty($newStaffId)) {
+            $ticket->update(['assigned_to' => null, 'status' => 'Pending']);
+        } else {
+            $ticket->update(['assigned_to' => $newStaffId, 'status' => 'In Progress']);
+        }
 
         DB::commit();
         return back()->with('success', 'Assignment updated.');
-
     } catch (\Exception $e) {
         DB::rollback();
         return back()->with('error', $e->getMessage());
@@ -157,13 +150,13 @@ public function updateStatus(Request $request, $id)
 {
     $ticket = Ticket::findOrFail($id);
 
-    $ticket->update(['status' => $request->status]);
+    // ✅ Set session variable BEFORE update so trigger can read it
+    DB::statement('SET @current_user_id = ?', [Auth::id()]);
 
-    // ← REMOVED manual TicketHistory::create() — trigger handles it now
+    $ticket->update(['status' => $request->status]);
 
     return back()->with('success', 'Status updated!');
 }
-
 public function editStaff($id)
 {
     if (Auth::user()->role !== 'admin') {
@@ -252,15 +245,15 @@ public function editStaff($id)
 {
     $user = auth()->user();
 
-    // 1. Initialize Query
-    $query = TicketHistory::with(['user', 'ticket']);
+    $query = TicketHistory::with([
+        'user',        // ✅ who performed the action (staff/admin)
+        'ticket.user'  // ✅ who reported/created the ticket (employee)
+    ]);
 
-    // 2. Strict Filter: If not admin, only show activities performed by this specific staff member
     if ($user->role !== 'admin') {
         $query->where('user_id', $user->id);
     }
 
-    // 3. Get results
     $activities = $query->latest()->paginate(15);
 
     return view('admin.activity-log', compact('activities'));
