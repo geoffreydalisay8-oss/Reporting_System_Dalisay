@@ -6,8 +6,8 @@ use App\Http\Controllers\AdminDashboardController;
 use App\Http\Controllers\TicketController;
 use App\Http\Controllers\AttachmentController;
 
-Route::get('/', function () {
-    return view('auth.login');
+Route::get('/', function () { 
+    return view('welcome'); 
 });
 
 // --- ROUTES FOR EVERYONE (Employees & Admins) ---
