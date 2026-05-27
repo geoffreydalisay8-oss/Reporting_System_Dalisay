@@ -47,5 +47,11 @@
                 <a href="{{ route('register') }}" class="text-blue-500 font-bold hover:underline">Register here</a>
             </p>
         </div>
+
+        <div class="mt-4 text-center">
+            <a href="{{ url('/') }}" class="text-decoration-none text-muted" style="font-size: 0.85rem;">
+                &larr; Back to Home
+            </a>
+        </div>
     </form>
 </x-guest-layout>

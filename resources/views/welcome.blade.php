@@ -72,7 +72,7 @@
                 <div class="p-4">
                     <div class="display-5 fw-bold text-primary mb-3">01</div>
                     <h4 class="text-white">Report</h4>
-                    <p class="text-white-50">Users submit incidents or complaints via an online form, including category, description, and priority level.</p>
+                    <p class="text-white-50">Users submit incidents or complaints through form, including category, description, and priority level.</p>
                 </div>
             </div>
             <div class="col-md-4">
