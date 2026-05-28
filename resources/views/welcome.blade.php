@@ -5,9 +5,8 @@
 <section id="home" class="container d-flex align-items-center justify-content-center" style="min-height: 80vh;">
     <div class="text-center">
         <h1 class="display-1 fw-bold mb-4">Welcome to <br> <span class="text-brand">ReportPortal</span></h1>
-        <p class="lead mb-5" style="max-width: 700px; color: #94a3b8;">
-           ReportPortal is designed to transform manual, inefficient habits into a professional, trackable, and transparent digital environment for your organization.
-            <a href="#" class="btn btn-outline-light btn-lg rounded-pill px-5">Create Account</a>
+        <p class="lead mb-5" style="max-width: 700px; color: #94a3b8;" >
+           ReportPortal is designed to transform manual, inefficient habits into a professional, trackable, and transparent digital environment for your organization. </p>
         </div>
     </div>
 </section>

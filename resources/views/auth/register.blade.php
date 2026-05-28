@@ -1,7 +1,7 @@
 <x-guest-layout>
     <div class="mb-10 text-center">
         <h1 class="text-3xl font-extrabold text-[#0f172a]">
-            Reporting<span class="text-[#3b82f6]">Portal</span>
+            Report<span class="text-[#3b82f6]">Portal</span>
         </h1>
         <p class="text-slate-500 text-sm mt-2 font-medium">Create an account to continue.</p>
     </div>
