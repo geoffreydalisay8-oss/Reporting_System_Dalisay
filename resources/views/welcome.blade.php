@@ -23,8 +23,8 @@
             </div>
             <div class="col-lg-5">
                 <div class="p-4 bg-card rounded-4 border">
-                    <h5 class="text-brand">Our Goal</h5>
-                    <p class="text-light">Our goal is to provide total transparency and accountability across every department in your organization.</p>
+                    <h5 class="text-brand">Goal</h5>
+                    <p class="text-light">goal is to provide total transparency and accountability across every department in your organization.</p>
                 </div>
             </div>
         </div>
